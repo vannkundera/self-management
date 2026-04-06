@@ -132,10 +132,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 </div>
 
 <div class="page active" id="page-list">
-  <div style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;">
-    <button class="filter-btn active" id="period-all" onclick="setPeriod('all',this)">전체</button>
-    <button class="filter-btn" id="period-year" onclick="setPeriod('year',this)" id="period-year"></button>
-    <button class="filter-btn" id="period-month" onclick="setPeriod('month',this)" id="period-month"></button>
+  <div style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+    <button class="filter-btn active" id="period-all" onclick="setPeriod('all')">전체</button>
+    <button class="filter-btn" id="period-year" onclick="setPeriod('year')"></button>
+    <select id="period-month-sel" onchange="setPeriod('month')" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;outline:none;"></select>
   </div>
   <div class="stats-bar">
     <div class="stat-card"><span class="n" id="s-total" style="color:var(--a1)">0</span><span class="l" id="s-total-l">전체 도서</span></div>
@@ -220,15 +220,22 @@ function todayStr(){return fmt(new Date());}
 function initPeriodBtns(){
   const now=new Date();
   const y=now.getFullYear();
-  const m=now.getMonth()+1;
   document.getElementById('period-year').textContent=`${y}년`;
-  document.getElementById('period-month').textContent=`${y}.${String(m).padStart(2,'0')}`;
+  // 월 드롭다운: 기록된 달 + 현재 달 모두 포함
+  const monthSet=new Set();
+  books.forEach(b=>{if(b.start)monthSet.add(b.start.slice(0,7));});
+  monthSet.add(`${y}-${String(now.getMonth()+1).padStart(2,'0')}`);
+  const months=[...monthSet].sort().reverse();
+  const sel=document.getElementById('period-month-sel');
+  const curVal=sel.value;
+  sel.innerHTML=`<option value="">월 선택</option>`+months.map(m=>`<option value="${m}"${m===curVal?'selected':''}>${m.replace('-','.')}</option>`).join('');
 }
 
-function setPeriod(p,el){
+function setPeriod(p){
   periodMode=p;
-  document.querySelectorAll('[id^="period-"]').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
+  document.getElementById('period-all').classList.toggle('active',p==='all');
+  document.getElementById('period-year').classList.toggle('active',p==='year');
+  if(p!=='month')document.getElementById('period-month-sel').value='';
   renderStats();
   renderList();
 }
@@ -236,13 +243,11 @@ function setPeriod(p,el){
 function booksInPeriod(p){
   const now=new Date();
   const y=now.getFullYear();
-  const m=now.getMonth()+1;
-  const yStr=String(y);
-  const mStr=`${yStr}-${String(m).padStart(2,'0')}`;
+  const selMonth=document.getElementById('period-month-sel')?.value;
   return books.filter(b=>{
-    const ref=b.end||b.start;
-    if(p==='year')return ref.startsWith(yStr);
-    if(p==='month')return ref.startsWith(mStr);
+    const ref=b.start; // 시작일 기준으로 통일
+    if(p==='year')return ref.startsWith(String(y));
+    if(p==='month'&&selMonth)return ref.startsWith(selMonth);
     return true;
   });
 }
@@ -435,9 +440,9 @@ function renderDerived(){
 function renderStats(){
   const now=new Date();
   const y=now.getFullYear();
-  const m=now.getMonth()+1;
+  const selMonth=document.getElementById('period-month-sel')?.value;
   const pb=booksInPeriod(periodMode);
-  const label=periodMode==='year'?`${y}년`:periodMode==='month'?`${y}.${String(m).padStart(2,'0')}`:'전체';
+  const label=periodMode==='year'?`${y}년`:periodMode==='month'&&selMonth?selMonth.replace('-','.'):'전체';
   document.getElementById('s-total').textContent=pb.length;
   document.getElementById('s-total-l').textContent=`${label} 도서`;
   document.getElementById('s-reading').textContent=books.filter(b=>!b.end).length;
