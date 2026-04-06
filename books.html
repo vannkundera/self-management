@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>독서 기록</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4f0;--surface:#fff;--surface2:#eeebe5;--border:#dedad2;
+  --text:#1c1814;--muted:#8c8480;
+  --a1:#b8832a;--a2:#2e87a8;--a3:#3a9e5f;--a4:#c04a4a;--a5:#7a5abf;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-weight:300;min-height:100vh;}
+.header{padding:22px 24px 0;display:flex;justify-content:space-between;align-items:flex-end;}
+.header h1{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;}
+.header p{font-size:11px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+.btn-add{background:var(--a1);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:opacity 0.2s;margin-top:4px;}
+.btn-add:hover{opacity:0.85;}
+.tabs{display:flex;padding:16px 24px 0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{padding:7px 18px;font-size:13px;cursor:pointer;border-radius:8px 8px 0 0;color:var(--muted);border:1px solid transparent;border-bottom:none;transition:all 0.15s;margin-bottom:-1px;background:transparent;}
+.tab.active{background:var(--surface);border-color:var(--border);color:var(--text);font-weight:500;}
+.page{display:none;padding:0 24px 48px;}
+.page.active{display:block;}
+
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+.stat-card .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;display:block;}
+.stat-card .l{font-size:10px;color:var(--muted);margin-top:3px;display:block;}
+
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-btn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.filter-btn.active{background:var(--text);color:#fff;border-color:var(--text);}
+.search-inp{margin-left:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;width:180px;}
+.search-inp::placeholder{color:var(--muted);}
+
+.book-list{display:flex;flex-direction:column;gap:12px;}
+.book-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+.book-accent{width:4px;flex-shrink:0;}
+.book-main{display:flex;}
+.book-body{flex:1;padding:16px 18px;}
+.book-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.book-title-wrap{flex:1;}
+.book-title{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600;margin-bottom:3px;}
+.book-author{font-size:11px;color:var(--muted);}
+.book-badges{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-start;flex-shrink:0;margin-left:12px;}
+.badge{font-size:10px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.badge-own-paper{background:rgba(184,131,42,0.12);color:var(--a1);}
+.badge-own-e{background:rgba(46,135,168,0.12);color:var(--a2);}
+.badge-loan{background:rgba(122,90,191,0.12);color:var(--a5);}
+.badge-read1{background:rgba(58,158,95,0.1);color:var(--a3);}
+.badge-read2{background:rgba(192,74,74,0.1);color:var(--a4);}
+.badge-rv-done{background:rgba(58,158,95,0.15);color:var(--a3);}
+.badge-rv-wait{background:rgba(184,131,42,0.15);color:var(--a1);}
+.badge-rv-skip{background:var(--surface2);color:var(--muted);}
+
+.gantt-wrap{margin-top:10px;}
+.gantt-lbl{font-size:10px;color:var(--muted);margin-bottom:4px;font-family:'JetBrains Mono',monospace;}
+.gantt-bar-bg{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;}
+.gantt-bar{height:100%;border-radius:5px;}
+
+.book-actions{display:flex;gap:6px;padding:10px 18px 12px 22px;border-top:1px solid var(--border);background:var(--surface2);}
+.act-btn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.act-btn:hover{border-color:var(--a1);color:var(--a1);}
+.act-btn.danger:hover{border-color:var(--a4);color:var(--a4);}
+
+.derived-sec{padding:12px 22px 14px;border-top:1px solid var(--border);}
+.derived-hd{font-size:10px;color:var(--muted);margin-bottom:7px;font-family:'JetBrains Mono',monospace;}
+.derived-item{display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:4px;}
+.derived-dot{width:5px;height:5px;border-radius:50%;background:var(--a1);flex-shrink:0;}
+.derived-name{flex:1;}
+.derived-del{color:var(--muted);cursor:pointer;font-size:13px;padding:0 3px;}
+.derived-del:hover{color:var(--a4);}
+.derived-add-row{display:flex;gap:6px;margin-top:7px;}
+.derived-inp{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;}
+.derived-inp::placeholder{color:var(--muted);}
+.derived-add-btn{background:var(--a1);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;}
+
+/* GANTT TAB */
+.gantt-view{overflow-x:auto;padding-bottom:8px;}
+.gantt-table{min-width:600px;}
+.gantt-hd{display:flex;margin-bottom:8px;}
+.gantt-col-name{width:180px;flex-shrink:0;}
+.gantt-col-bar{flex:1;display:flex;}
+.gantt-month{flex:1;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center;}
+.gantt-row{display:flex;align-items:center;margin-bottom:7px;}
+.gantt-row-name{width:180px;flex-shrink:0;font-size:12px;padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gantt-row-bar-wrap{flex:1;position:relative;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.gantt-row-bar-fill{position:absolute;height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:9px;color:#fff;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;}
+
+/* DERIVED TAB */
+.derived-all-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.derived-all-from{font-size:10px;color:var(--muted);margin-top:3px;}
+
+.empty{text-align:center;padding:48px 24px;color:var(--muted);font-size:13px;}
+.empty strong{display:block;font-size:15px;color:var(--text);margin-bottom:6px;font-family:'Noto Serif KR',serif;}
+
+/* MODAL */
+.modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border-radius:16px;padding:28px 28px 24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.15);}
+.modal h2{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;margin-bottom:20px;}
+.f-row{margin-bottom:14px;}
+.f-lbl{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;font-family:'JetBrains Mono',monospace;}
+.f-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;}
+.f-inp:focus{border-color:var(--a1);}
+.f-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.radio-group{display:flex;gap:7px;flex-wrap:wrap;}
+.rbtn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all 0.15s;user-select:none;}
+.rbtn.sel{background:var(--text);color:#fff;border-color:var(--text);}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+.btn-cancel{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:12px;cursor:pointer;color:var(--muted);}
+.btn-save{background:var(--a1);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:500;cursor:pointer;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>독서 기록</h1>
+    <p>READING LOG · GANTT · REVIEW</p>
+  </div>
+  <button class="btn-add" onclick="openModal()">+ 책 추가</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('list')">📚 목록</div>
+  <div class="tab" onclick="switchTab('gantt')">📊 간트차트</div>
+  <div class="tab" onclick="switchTab('derived')">🔗 파생 도서</div>
+</div>
+
+<div class="page active" id="page-list">
+  <div style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;">
+    <button class="filter-btn active" id="period-all" onclick="setPeriod('all',this)">전체</button>
+    <button class="filter-btn" id="period-year" onclick="setPeriod('year',this)" id="period-year"></button>
+    <button class="filter-btn" id="period-month" onclick="setPeriod('month',this)" id="period-month"></button>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-card"><span class="n" id="s-total" style="color:var(--a1)">0</span><span class="l" id="s-total-l">전체 도서</span></div>
+    <div class="stat-card"><span class="n" id="s-reading" style="color:var(--a2)">0</span><span class="l">읽는 중</span></div>
+    <div class="stat-card"><span class="n" id="s-done" style="color:var(--a3)">0</span><span class="l" id="s-done-l">완독</span></div>
+    <div class="stat-card"><span class="n" id="s-review" style="color:var(--a1)">0</span><span class="l">서평 작성</span></div>
+    <div class="stat-card"><span class="n" id="s-derived" style="color:var(--a5)">0</span><span class="l">파생 도서</span></div>
+  </div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all',this)">전체</button>
+    <button class="filter-btn" onclick="setFilter('reading',this)">읽는 중</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">완독</button>
+    <button class="filter-btn" onclick="setFilter('read2',this)">재독</button>
+    <button class="filter-btn" onclick="setFilter('rv-wait',this)">서평 대기</button>
+    <button class="filter-btn" onclick="setFilter('own-paper',this)">종이책</button>
+    <button class="filter-btn" onclick="setFilter('loan',this)">대출</button>
+    <input class="search-inp" id="search-inp" placeholder="제목·저자 검색" oninput="renderList()">
+  </div>
+  <div class="book-list" id="book-list"></div>
+</div>
+
+<div class="page" id="page-gantt">
+  <div class="gantt-view"><div class="gantt-table" id="gantt-table"></div></div>
+</div>
+
+<div class="page" id="page-derived">
+  <div id="derived-all"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg" onclick="closeBg(event)">
+  <div class="modal">
+    <h2 id="modal-title">책 추가</h2>
+    <div class="f-row"><label class="f-lbl">제목</label><input class="f-inp" id="f-title" placeholder="책 제목"></div>
+    <div class="f-row"><label class="f-lbl">저자</label><input class="f-inp" id="f-author" placeholder="저자명"></div>
+    <div class="f-row-2">
+      <div><label class="f-lbl">읽기 시작일</label><input class="f-inp" id="f-start" type="date"></div>
+      <div><label class="f-lbl">완독일 (진행 중이면 빈칸)</label><input class="f-inp" id="f-end" type="date"></div>
+    </div>
+    <div class="f-row">
+      <label class="f-lbl">소유 형태</label>
+      <div class="radio-group" id="rg-own">
+        <div class="rbtn sel" onclick="sel('rg-own',this,'own-paper')">소유 · 종이책</div>
+        <div class="rbtn" onclick="sel('rg-own',this,'own-e')">소유 · 전자책</div>
+        <div class="rbtn" onclick="sel('rg-own',this,'loan')">대출</div>
+      </div>
+    </div>
+    <div class="f-row">
+      <label class="f-lbl">독서 회차</label>
+      <div class="radio-group" id="rg-read">
+        <div class="rbtn sel" onclick="sel('rg-read',this,'read1')">1회독</div>
+        <div class="rbtn" onclick="sel('rg-read',this,'read2')">재독</div>
+      </div>
+    </div>
+    <div class="f-row">
+      <label class="f-lbl">서평 여부</label>
+      <div class="radio-group" id="rg-rv">
+        <div class="rbtn" onclick="sel('rg-rv',this,'done')">작성완료</div>
+        <div class="rbtn sel" onclick="sel('rg-rv',this,'wait')">작성대기</div>
+        <div class="rbtn" onclick="sel('rg-rv',this,'skip')">스킵</div>
+      </div>
+    </div>
+    <div class="f-row"><label class="f-lbl">메모 (선택)</label><input class="f-inp" id="f-memo" placeholder="간단한 메모"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="saveBook()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const S={get:(k,d)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+let books=S.get('books2',[]);
+let filterMode='all';
+let periodMode='all';
+let editId=null;
+let mOwn='own-paper',mRead='read1',mRv='wait';
+
+function fmt(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function todayStr(){return fmt(new Date());}
+
+function initPeriodBtns(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=now.getMonth()+1;
+  document.getElementById('period-year').textContent=`${y}년`;
+  document.getElementById('period-month').textContent=`${y}.${String(m).padStart(2,'0')}`;
+}
+
+function setPeriod(p,el){
+  periodMode=p;
+  document.querySelectorAll('[id^="period-"]').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderStats();
+  renderList();
+}
+
+function booksInPeriod(p){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=now.getMonth()+1;
+  const yStr=String(y);
+  const mStr=`${yStr}-${String(m).padStart(2,'0')}`;
+  return books.filter(b=>{
+    const ref=b.end||b.start;
+    if(p==='year')return ref.startsWith(yStr);
+    if(p==='month')return ref.startsWith(mStr);
+    return true;
+  });
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['list','gantt','derived'][i]===t));
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+t).classList.add('active');
+  if(t==='gantt')renderGantt();
+  if(t==='derived')renderDerived();
+}
+
+function setFilter(f,el){filterMode=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderList();}
+
+function openModal(id=null){
+  editId=id;
+  const b=id?books.find(x=>x.id===id):null;
+  document.getElementById('modal-title').textContent=id?'책 수정':'책 추가';
+  document.getElementById('f-title').value=b?b.title:'';
+  document.getElementById('f-author').value=b?b.author:'';
+  document.getElementById('f-start').value=b?b.start:todayStr();
+  document.getElementById('f-end').value=b?b.end:'';
+  document.getElementById('f-memo').value=b?b.memo:'';
+  mOwn=b?b.own:'own-paper'; mRead=b?b.read:'read1'; mRv=b?b.rv:'wait';
+  [['rg-own',mOwn,{'own-paper':0,'own-e':1,'loan':2}],['rg-read',mRead,{'read1':0,'read2':1}],['rg-rv',mRv,{'done':0,'wait':1,'skip':2}]].forEach(([gid,val,map])=>{
+    document.querySelectorAll(`#${gid} .rbtn`).forEach(x=>x.classList.remove('sel'));
+    document.querySelectorAll(`#${gid} .rbtn`)[map[val]]?.classList.add('sel');
+  });
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+function closeBg(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
+function sel(gid,el,val){
+  document.querySelectorAll(`#${gid} .rbtn`).forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  if(gid==='rg-own')mOwn=val;
+  if(gid==='rg-read')mRead=val;
+  if(gid==='rg-rv')mRv=val;
+}
+
+function saveBook(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title)return;
+  const book={
+    id:editId||Date.now().toString(),
+    title,
+    author:document.getElementById('f-author').value.trim(),
+    start:document.getElementById('f-start').value||todayStr(),
+    end:document.getElementById('f-end').value||'',
+    own:mOwn, read:mRead, rv:mRv,
+    memo:document.getElementById('f-memo').value.trim(),
+    derived:editId?(books.find(b=>b.id===editId)?.derived||[]):[]
+  };
+  if(editId){const i=books.findIndex(b=>b.id===editId);if(i!==-1)books[i]=book;}
+  else books.unshift(book);
+  S.set('books2',books);
+  closeModal();
+  renderAll();
+}
+
+function deleteBook(id){
+  if(!confirm('이 책을 삭제할까?'))return;
+  books=books.filter(b=>b.id!==id);
+  S.set('books2',books);renderAll();
+}
+
+function addDerived(id){
+  const inp=document.getElementById('di-'+id);
+  const val=inp?.value.trim();
+  if(!val)return;
+  const b=books.find(x=>x.id===id);
+  if(!b)return;
+  if(!b.derived)b.derived=[];
+  b.derived.push({id:Date.now().toString(),title:val});
+  inp.value='';
+  S.set('books2',books);renderAll();
+}
+function delDerived(bid,did){
+  const b=books.find(x=>x.id===bid);
+  if(!b)return;
+  b.derived=b.derived.filter(d=>d.id!==did);
+  S.set('books2',books);renderAll();
+  if(document.getElementById('page-derived').classList.contains('active'))renderDerived();
+}
+
+function ownBadge(own){const m={'own-paper':['소유·종이책','badge-own-paper'],'own-e':['소유·전자책','badge-own-e'],'loan':['대출','badge-loan']};const[t,c]=m[own]||['',''];return `<span class="badge ${c}">${t}</span>`;}
+function readBadge(read){return read==='read2'?`<span class="badge badge-read2">재독</span>`:`<span class="badge badge-read1">1회독</span>`;}
+function rvBadge(rv){const m={'done':['작성완료','badge-rv-done'],'wait':['서평대기','badge-rv-wait'],'skip':['스킵','badge-rv-skip']};const[t,c]=m[rv]||['',''];return `<span class="badge ${c}">${t}</span>`;}
+function accentCol(rv){return rv==='done'?'var(--a3)':rv==='wait'?'var(--a1)':'var(--border)';}
+
+function ganttMini(b){
+  const start=new Date(b.start+'T00:00:00');
+  const end=b.end?new Date(b.end+'T00:00:00'):new Date();
+  const days=Math.max(1,Math.round((end-start)/(1000*60*60*24)));
+  const col=b.end?'var(--a3)':'var(--a2)';
+  return `<div class="gantt-wrap">
+    <div class="gantt-lbl">${b.start.slice(5)} ~ ${b.end?b.end.slice(5):'진행 중'} (${days}일)</div>
+    <div class="gantt-bar-bg"><div class="gantt-bar" style="width:100%;background:${col};opacity:0.65;"></div></div>
+  </div>`;
+}
+
+function renderList(){
+  const q=(document.getElementById('search-inp')?.value||'').toLowerCase();
+  const f=books.filter(b=>{
+    if(q&&!b.title.toLowerCase().includes(q)&&!(b.author||'').toLowerCase().includes(q))return false;
+    if(filterMode==='all')return true;
+    if(filterMode==='reading')return !b.end;
+    if(filterMode==='done')return !!b.end;
+    if(filterMode==='read2')return b.read==='read2';
+    if(filterMode==='rv-wait')return b.rv==='wait';
+    if(filterMode==='own-paper')return b.own==='own-paper';
+    if(filterMode==='loan')return b.own==='loan';
+    return true;
+  });
+  const el=document.getElementById('book-list');
+  if(!f.length){el.innerHTML=`<div class="empty"><strong>책이 없어요</strong>위 버튼으로 추가해봐요</div>`;return;}
+  el.innerHTML=f.map(b=>{
+    const derived=b.derived||[];
+    return `<div class="book-card">
+      <div class="book-main">
+        <div class="book-accent" style="background:${accentCol(b.rv)}"></div>
+        <div class="book-body">
+          <div class="book-top">
+            <div class="book-title-wrap">
+              <div class="book-title">${b.title}</div>
+              <div class="book-author">${b.author||'저자 미입력'}</div>
+            </div>
+            <div class="book-badges">${ownBadge(b.own)}${readBadge(b.read)}${rvBadge(b.rv)}</div>
+          </div>
+          ${ganttMini(b)}
+          ${b.memo?`<div style="margin-top:8px;font-size:11px;color:var(--muted);">${b.memo}</div>`:''}
+        </div>
+      </div>
+      <div class="derived-sec">
+        <div class="derived-hd">파생 도서${derived.length?` (${derived.length})`:''}</div>
+        ${derived.map(d=>`<div class="derived-item"><div class="derived-dot"></div><div class="derived-name">${d.title}</div><span class="derived-del" onclick="delDerived('${b.id}','${d.id}')">×</span></div>`).join('')}
+        <div class="derived-add-row">
+          <input class="derived-inp" id="di-${b.id}" placeholder="읽고 싶은 파생 도서 추가" onkeydown="if(event.key==='Enter')addDerived('${b.id}')">
+          <button class="derived-add-btn" onclick="addDerived('${b.id}')">추가</button>
+        </div>
+      </div>
+      <div class="book-actions">
+        <button class="act-btn" onclick="openModal('${b.id}')">수정</button>
+        <button class="act-btn danger" onclick="deleteBook('${b.id}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGantt(){
+  const el=document.getElementById('gantt-table');
+  if(!books.length){el.innerHTML=`<div class="empty"><strong>책이 없어요</strong></div>`;return;}
+  const allS=books.map(b=>new Date(b.start+'T00:00:00'));
+  const allE=books.map(b=>b.end?new Date(b.end+'T00:00:00'):new Date());
+  const minD=new Date(Math.min(...allS));
+  const maxD=new Date(Math.max(...allE));
+  const total=Math.max(1,Math.round((maxD-minD)/(1000*60*60*24)))+7;
+  const cur=new Date(minD);cur.setDate(1);
+  const months=[];
+  while(cur<=maxD){months.push(`${cur.getFullYear()}.${String(cur.getMonth()+1).padStart(2,'0')}`);cur.setMonth(cur.getMonth()+1);}
+  const rows=books.map(b=>{
+    const s=new Date(b.start+'T00:00:00');
+    const e=b.end?new Date(b.end+'T00:00:00'):new Date();
+    const off=Math.round((s-minD)/(1000*60*60*24));
+    const dur=Math.max(1,Math.round((e-s)/(1000*60*60*24)));
+    const left=(off/total*100).toFixed(1);
+    const width=Math.max(1,dur/total*100).toFixed(1);
+    const col=b.end?'var(--a3)':'var(--a2)';
+    return `<div class="gantt-row">
+      <div class="gantt-row-name" title="${b.title}">${b.title}</div>
+      <div class="gantt-row-bar-wrap">
+        <div class="gantt-row-bar-fill" style="left:${left}%;width:${width}%;background:${col};opacity:0.8;">${b.start.slice(5)}${b.end?' ~ '+b.end.slice(5):' ~'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="gantt-hd"><div class="gantt-col-name"></div><div class="gantt-col-bar">${months.map(m=>`<div class="gantt-month">${m}</div>`).join('')}</div></div>${rows}`;
+}
+
+function renderDerived(){
+  const el=document.getElementById('derived-all');
+  const all=[];
+  books.forEach(b=>(b.derived||[]).forEach(d=>all.push({bookTitle:b.title,bookId:b.id,d})));
+  if(!all.length){el.innerHTML=`<div class="empty"><strong>파생 도서가 없어요</strong>책 카드에서 추가해봐요</div>`;return;}
+  el.innerHTML=all.map(a=>`<div class="derived-all-item">
+    <div><div style="font-size:13px;font-weight:500;">${a.d.title}</div><div class="derived-all-from">← ${a.bookTitle}</div></div>
+    <span class="derived-del" onclick="delDerived('${a.bookId}','${a.d.id}')">×</span>
+  </div>`).join('');
+}
+
+function renderStats(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=now.getMonth()+1;
+  const pb=booksInPeriod(periodMode);
+  const label=periodMode==='year'?`${y}년`:periodMode==='month'?`${y}.${String(m).padStart(2,'0')}`:'전체';
+  document.getElementById('s-total').textContent=pb.length;
+  document.getElementById('s-total-l').textContent=`${label} 도서`;
+  document.getElementById('s-reading').textContent=books.filter(b=>!b.end).length;
+  document.getElementById('s-done').textContent=pb.filter(b=>!!b.end).length;
+  document.getElementById('s-done-l').textContent=`${label} 완독`;
+  document.getElementById('s-review').textContent=pb.filter(b=>b.rv==='done').length;
+  document.getElementById('s-derived').textContent=books.reduce((a,b)=>a+(b.derived?.length||0),0);
+}
+
+function renderAll(){initPeriodBtns();renderStats();renderList();}
+renderAll();
+</script>
+</body>
+</html>
