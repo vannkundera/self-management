@@ -112,6 +112,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
 .btn-cancel{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:12px;cursor:pointer;color:var(--muted);}
 .btn-save{background:var(--a1);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:500;cursor:pointer;}
+.rv-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:opacity 0.2s;}
+.rv-item.done{opacity:0.4;}
+.rv-item-left{flex:1;}
+.rv-item-title{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:600;margin-bottom:3px;}
+.rv-item-author{font-size:11px;color:var(--muted);}
+.rv-item-date{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+.rv-done-badge{font-size:11px;padding:4px 12px;border-radius:6px;background:rgba(58,158,95,0.12);color:var(--a3);font-weight:500;}
+.rv-btn{font-size:11px;padding:6px 14px;border-radius:7px;border:1px solid rgba(184,131,42,0.4);background:rgba(184,131,42,0.07);color:var(--a1);cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.rv-btn:hover{background:var(--a1);color:#fff;border-color:var(--a1);}
+.rv-section-title{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:10px;margin-top:18px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.rv-section-title:first-child{margin-top:0;}
 ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
@@ -129,6 +140,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
   <div class="tab active" onclick="switchTab('list')">📚 목록</div>
   <div class="tab" onclick="switchTab('gantt')">📊 간트차트</div>
   <div class="tab" onclick="switchTab('derived')">🔗 파생 도서</div>
+  <div class="tab" onclick="switchTab('review')">✍️ 서평 관리</div>
 </div>
 
 <div class="page active" id="page-list">
@@ -163,6 +175,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 
 <div class="page" id="page-derived">
   <div id="derived-all"></div>
+</div>
+
+<div class="page" id="page-review">
+  <div id="review-list"></div>
 </div>
 
 <!-- MODAL -->
@@ -253,11 +269,54 @@ function booksInPeriod(p){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['list','gantt','derived'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['list','gantt','derived','review'][i]===t));
   document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
   document.getElementById('page-'+t).classList.add('active');
   if(t==='gantt')renderGantt();
   if(t==='derived')renderDerived();
+  if(t==='review')renderReview();
+}
+
+function renderReview(){
+  const el=document.getElementById('review-list');
+  const waiting=books.filter(b=>b.rv==='wait');
+  const done=books.filter(b=>b.rv==='done');
+  if(!waiting.length&&!done.length){el.innerHTML=`<div class="empty"><strong>서평 대기 중인 책이 없어요</strong>책 목록에서 서평 상태를 설정해봐요</div>`;return;}
+  let html='';
+  if(waiting.length){
+    html+=`<div class="rv-section-title">서평 대기 — ${waiting.length}권</div>`;
+    html+=waiting.map(b=>`
+      <div class="rv-item" id="rv-${b.id}">
+        <div class="rv-item-left">
+          <div class="rv-item-title">${b.title}</div>
+          <div class="rv-item-author">${b.author||'저자 미입력'}</div>
+          <div class="rv-item-date">${b.start}${b.end?' ~ '+b.end:' ~ 읽는 중'}</div>
+        </div>
+        <button class="rv-btn" onclick="markRevDone('${b.id}')">작성 완료</button>
+      </div>`).join('');
+  }
+  if(done.length){
+    html+=`<div class="rv-section-title">작성 완료 — ${done.length}권</div>`;
+    html+=done.map(b=>`
+      <div class="rv-item done">
+        <div class="rv-item-left">
+          <div class="rv-item-title">${b.title}</div>
+          <div class="rv-item-author">${b.author||'저자 미입력'}</div>
+          <div class="rv-item-date">${b.start}${b.end?' ~ '+b.end:''}</div>
+        </div>
+        <span class="rv-done-badge">완료</span>
+      </div>`).join('');
+  }
+  el.innerHTML=html;
+}
+
+function markRevDone(id){
+  const b=books.find(x=>x.id===id);
+  if(!b)return;
+  b.rv='done';
+  S.set('books2',books);
+  renderReview();
+  renderStats();
 }
 
 function setFilter(f,el){filterMode=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderList();}
