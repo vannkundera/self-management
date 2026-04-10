@@ -467,7 +467,8 @@ function renderGantt(){
   const cur=new Date(minD);cur.setDate(1);
   const months=[];
   while(cur<=maxD){months.push(`${cur.getFullYear()}.${String(cur.getMonth()+1).padStart(2,'0')}`);cur.setMonth(cur.getMonth()+1);}
-  const rows=books.map(b=>{
+  const sorted=[...books].sort((a,b)=>a.start.localeCompare(b.start));
+  const rows=sorted.map(b=>{
     const s=new Date(b.start+'T00:00:00');
     const e=b.end?new Date(b.end+'T00:00:00'):new Date();
     const off=Math.round((s-minD)/(1000*60*60*24));
