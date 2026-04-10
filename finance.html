@@ -86,7 +86,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       <div>
         <div class="lbl">내 실잔액</div>
         <div class="mine-big" id="b-mine">-</div>
-        <div class="sub">통장 총액 − 엄마 몫</div>
+        <div class="sub">통장 총액 − 엄마 몫 − 주식 − 지출 + 수입</div>
       </div>
       <div style="text-align:right;">
         <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">이번달</div>
@@ -104,6 +104,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       <div class="acc" style="background:var(--a4)"></div>
       <div class="lbl">엄마 몫</div>
       <div class="amt" id="b-mom" style="color:var(--muted)">-</div>
+      <div class="sub">설정에서 수정 가능</div>
+    </div>
+    <div class="balance-card">
+      <div class="acc" style="background:var(--a2)"></div>
+      <div class="lbl">주식 투자금</div>
+      <div class="amt" id="b-stock" style="color:var(--a2)">-</div>
       <div class="sub">설정에서 수정 가능</div>
     </div>
   </div>
@@ -163,6 +169,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       <label>엄마 몫 (고정)</label>
       <input type="number" id="s-mom" placeholder="금액 입력">
     </div>
+    <div class="setting-row">
+      <label>주식 투자금</label>
+      <input type="number" id="s-stock" placeholder="금액 입력">
+    </div>
     <div style="font-size:11px;color:var(--muted);margin-top:2px;">변동 시 수정 후 저장하면 바로 반영돼.</div>
     <button class="btn-save" onclick="saveSetting()">저장</button>
   </div>
@@ -170,7 +180,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 
 <script>
 const S={get:(k,d)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
-let cfg=S.get('fin-cfg2',{mom:0,total:0});
+let cfg=S.get('fin-cfg2',{mom:0,total:0,stock:0});
 let txs=S.get('fin-txs2',[]);
 let curType='income';
 let selCat={income:'원고료',expense:'식비'};
@@ -186,7 +196,7 @@ function switchTab(t){
   document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
   document.getElementById('page-'+t).classList.add('active');
   if(t==='stats')renderStats();
-  if(t==='setting')document.getElementById('s-mom').value=cfg.mom||'';
+  if(t==='setting'){document.getElementById('s-mom').value=cfg.mom||'';document.getElementById('s-stock').value=cfg.stock||'';}
 }
 function setType(type){
   curType=type;
@@ -209,7 +219,9 @@ function updateTotal(){
 }
 function saveSetting(){
   const mom=parseInt(document.getElementById('s-mom').value);
+  const stock=parseInt(document.getElementById('s-stock').value);
   if(!isNaN(mom)&&mom>=0)cfg.mom=mom;
+  if(!isNaN(stock)&&stock>=0)cfg.stock=stock;
   S.set('fin-cfg2',cfg);renderBalance();alert('저장됐어!');
 }
 function addTx(){
@@ -228,9 +240,12 @@ function renderBalance(){
   const m=ms();
   const mInc=txs.filter(t=>t.type==='income'&&t.date.startsWith(m)).reduce((a,t)=>a+t.amount,0);
   const mExp=txs.filter(t=>t.type==='expense'&&t.date.startsWith(m)).reduce((a,t)=>a+t.amount,0);
-  const mine=cfg.total-cfg.mom;
+  const totalInc=txs.filter(t=>t.type==='income').reduce((a,t)=>a+t.amount,0);
+  const totalExp=txs.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amount,0);
+  const mine=cfg.total-cfg.mom-(cfg.stock||0)+totalInc-totalExp;
   document.getElementById('b-total').textContent=cfg.total?comma(cfg.total):'-';
   document.getElementById('b-mom').textContent=cfg.mom?comma(cfg.mom):'-';
+  document.getElementById('b-stock').textContent=(cfg.stock)?comma(cfg.stock):'-';
   document.getElementById('b-mine').textContent=cfg.total?comma(mine):'-';
   document.getElementById('b-mine').style.color=mine<0?'var(--a4)':'var(--a3)';
   document.getElementById('b-income-m').textContent=mInc?'+'+comma(mInc):'수입 -';
