@@ -127,7 +127,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 </style>
 </head>
 <body>
-<div class="header"><div><h1>자기관리 시스템</h1><p>WRITING · HEALTH · STOCK · SCREEN · TIME</p></div></div>
+<div class="header"><div><h1>자기관리 시스템</h1><p>WRITING · HEALTH · STOCK · SCREEN · TIME</p></div>
+<div style="display:flex;gap:6px;">
+  <button onclick="backupData()" style="font-size:10px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">💾 백업</button>
+  <label style="font-size:10px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">📂 복원<input type="file" accept=".json" style="display:none;" onchange="restoreData(event)"></label>
+</div>
+</div>
 <div class="date-bar">
   <label>📅 기록 날짜</label>
   <input type="date" id="global-date" onchange="onDateChange()">
@@ -382,6 +387,31 @@ document.getElementById('stat-week').innerHTML=sc(wkRv,'서평','var(--a1)','목
 document.getElementById('stat-month').innerHTML=sc(moRv,'서평','var(--a1)','이번달')+sc(moFw,'자유글','var(--a1b)',`${moD}일 중`)+sc(moCy,'사이클','var(--a2)',`${moD}일 중`)+sc(moRv+moFw,'글쓰기 합','var(--a5)','');
 const wa=avg(wkSc),ma=avg(moSc),aa=avg(allSc);
 document.getElementById('stat-screen').innerHTML=sc(wa+'h','이번주 평균',scCol(wa),`${wkSc.length}일 기록`)+sc(ma+'h','이번달 평균',scCol(ma),`${moSc.length}일 기록`)+sc(aa+'h','전체 평균',scCol(aa),`총 ${allSc.length}일`);}
+function backupData(){
+  const data={writingDates,cyLog,wLog,scLog,rules,stockChecks,exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`자기관리_백업_${todayStr()}.json`;a.click();
+}
+function restoreData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!confirm('기존 데이터를 덮어쓸게. 계속할까?'))return;
+      if(data.writingDates){writingDates=data.writingDates;S.set('writingDates',writingDates);}
+      if(data.cyLog){cyLog=data.cyLog;S.set('cyLog',cyLog);}
+      if(data.wLog){wLog=data.wLog;S.set('wLog',wLog);}
+      if(data.scLog){scLog=data.scLog;S.set('scLog',scLog);}
+      if(data.rules){rules=data.rules;S.set('rules',rules);}
+      if(data.stockChecks){stockChecks=data.stockChecks;S.set('stockChecks',stockChecks);}
+      alert('복원 완료!');renderDaily();
+    }catch(err){alert('파일을 읽을 수 없어. JSON 형식인지 확인해줘.');}
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
+
