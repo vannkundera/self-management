@@ -133,7 +133,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
     <h1>독서 기록</h1>
     <p>READING LOG · GANTT · REVIEW</p>
   </div>
-  <button class="btn-add" onclick="openModal()">+ 책 추가</button>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button onclick="backupBooks()" style="font-size:10px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">💾 백업</button>
+    <label style="font-size:10px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">📂 복원<input type="file" accept=".json" style="display:none;" onchange="restoreBooks(event)"></label>
+    <button class="btn-add" onclick="openModal()">+ 책 추가</button>
+  </div>
 </div>
 
 <div class="tabs">
@@ -514,6 +518,27 @@ function renderStats(){
 
 function renderAll(){initPeriodBtns();renderStats();renderList();}
 renderAll();
+
+function backupBooks(){
+  const data={books,exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const today=new Date();const d=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  a.download=`독서기록_백업_${d}.json`;a.click();
+}
+function restoreBooks(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!confirm('기존 독서 기록을 덮어쓸게. 계속할까?'))return;
+      if(data.books){books=data.books;S.set('books2',books);}
+      alert('복원 완료!');renderAll();
+    }catch(err){alert('파일을 읽을 수 없어. JSON 형식인지 확인해줘.');}
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
