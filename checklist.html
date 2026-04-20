@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>오늘의 기록</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap');
+
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1917;
+    --border: #2e2c28;
+    --text: #e8e4dc;
+    --muted: #6b6760;
+    --accent: #c9a96e;
+    --accent-dim: #7a6440;
+    --checked-bg: #1e1c17;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif KR', serif;
+    min-height: 100vh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 52px 28px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .date-line {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+
+  .progress-bar-wrap {
+    margin-top: 16px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  .progress-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .items {
+    flex: 1;
+    padding: 12px 0;
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+  }
+
+  .item:active {
+    background: var(--surface);
+  }
+
+  .item.checked {
+    background: var(--checked-bg);
+  }
+
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--accent-dim);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .item.checked .checkbox {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checkmark {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .item.checked .checkmark {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .item-content {
+    flex: 1;
+  }
+
+  .item-label {
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--text);
+    transition: color 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  .item.checked .item-label {
+    color: var(--muted);
+  }
+
+  .item-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: 0.08em;
+  }
+
+  .streak-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .item.checked .streak-dot {
+    background: var(--accent);
+  }
+
+  footer {
+    padding: 24px 28px 40px;
+    border-top: 1px solid var(--border);
+  }
+
+  .reset-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .reset-btn:active {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  .all-done {
+    text-align: center;
+    padding: 28px 0 0;
+    font-size: 13px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 0.4s;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .all-done.visible {
+    opacity: 1;
+    height: auto;
+    padding-bottom: 16px;
+  }
+
+  .week-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 20px;
+    justify-content: center;
+  }
+
+  .week-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .week-day-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .week-day-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .week-day-dot.done {
+    background: var(--accent);
+  }
+
+  .week-day-dot.today {
+    border: 1.5px solid var(--accent-dim);
+    background: transparent;
+  }
+
+  .week-day-dot.today.done {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="date-line" id="dateDisplay"></div>
+  <h1>오늘의 기록</h1>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0 / 4</div>
+</header>
+
+<div class="items" id="itemList"></div>
+
+<footer>
+  <div class="all-done" id="allDone">오늘도 잘 해냈어 ✦</div>
+  <div class="week-row" id="weekRow"></div>
+  <button class="reset-btn" onclick="resetToday()">오늘 초기화</button>
+</footer>
+
+<script>
+  const ITEMS = [
+    { id: 'writing', label: '글쓰기', sub: 'writing' },
+    { id: 'reading', label: '책읽기', sub: 'reading' },
+    { id: 'cycling', label: '사이클', sub: 'cycling' },
+    { id: 'movie', label: '영화보기', sub: 'film' },
+  ];
+
+  const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function getTodayKey() {
+    const d = new Date();
+    return `checklist_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+  }
+
+  function getWeekKeys() {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const keys = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - dayOfWeek + i);
+      keys.push({
+        key: `checklist_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`,
+        label: DAYS[i],
+        isToday: i === dayOfWeek
+      });
+    }
+    return keys;
+  }
+
+  function loadState() {
+    const raw = localStorage.getItem(getTodayKey());
+    return raw ? JSON.parse(raw) : {};
+  }
+
+  function saveState(state) {
+    localStorage.setItem(getTodayKey(), JSON.stringify(state));
+  }
+
+  function isDayComplete(key) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    return ITEMS.every(item => state[item.id]);
+  }
+
+  let state = loadState();
+
+  function render() {
+    const list = document.getElementById('itemList');
+    list.innerHTML = '';
+
+    ITEMS.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'item' + (state[item.id] ? ' checked' : '');
+      el.innerHTML = `
+        <div class="checkbox">
+          <svg class="checkmark" width="12" height="10" viewBox="0 0 12 10" fill="none">
+            <path d="M1 5L4.5 8.5L11 1.5" stroke="#0f0e0c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="item-content">
+          <div class="item-label">${item.label}</div>
+          <div class="item-sub">${item.sub}</div>
+        </div>
+        <div class="streak-dot"></div>
+      `;
+      el.addEventListener('click', () => toggle(item.id));
+      list.appendChild(el);
+    });
+
+    updateProgress();
+    renderWeek();
+  }
+
+  function toggle(id) {
+    state[id] = !state[id];
+    saveState(state);
+    render();
+  }
+
+  function updateProgress() {
+    const done = ITEMS.filter(i => state[i.id]).length;
+    const pct = (done / ITEMS.length) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = `${done} / ${ITEMS.length}`;
+    const allDone = document.getElementById('allDone');
+    if (done === ITEMS.length) {
+      allDone.classList.add('visible');
+    } else {
+      allDone.classList.remove('visible');
+    }
+  }
+
+  function renderWeek() {
+    const weekRow = document.getElementById('weekRow');
+    weekRow.innerHTML = '';
+    getWeekKeys().forEach(({ key, label, isToday }) => {
+      const done = isDayComplete(key);
+      const div = document.createElement('div');
+      div.className = 'week-day';
+      div.innerHTML = `
+        <div class="week-day-label">${label}</div>
+        <div class="week-day-dot ${isToday ? 'today' : ''} ${done ? 'done' : ''}"></div>
+      `;
+      weekRow.appendChild(div);
+    });
+  }
+
+  function resetToday() {
+    state = {};
+    saveState(state);
+    render();
+  }
+
+  function setDate() {
+    const d = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+    document.getElementById('dateDisplay').textContent =
+      d.toLocaleDateString('ko-KR', options);
+  }
+
+  setDate();
+  render();
+</script>
+</body>
+</html>
